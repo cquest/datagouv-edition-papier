@@ -13,6 +13,10 @@ import psycopg2.extras
 import requests
 from PIL import Image
 
+def capitale(text):
+    return text[0].upper() +text[1:]
+
+
 def md2tex_old(md):
     # guillemets
     t = md.replace('%', '\\%').replace('$', '\\$').replace('{', '\\{')
@@ -50,10 +54,33 @@ def md2tex(md):
     return md
 
 
-def data2tex(datagouv):
+def getlogo(logo, path):
+    logo = None
+    if data['logo'] != '':
+        logo = data['logo'].replace('https://static.data.gouv.fr/avatars/','').replace('/','_')
+        logo = 'images/orga/'+ logo
+        if not os.path.isfile(logo):
+            r = requests.get(data['logo'])
+            print('GET',data['logo'],logo)
+            if r.status_code == 200:
+                if logo:
+                    with open(logo, 'wb') as fd:
+                        for chunk in r.iter_content(chunk_size=1024):
+                            fd.write(chunk)
+                    if r.headers['content-type'] == 'image/gif':
+                        gif = Image.open(logo)
+                        logo = logo.replace('.gif','.png')
+                        gif.save(logo)
+            else:
+                logo = None
+        else:
+            logo = logo.replace('.gif','.png')
+
+
+def data2tex(datagouv, orga=True):
   org = ''
   for data in datagouv:
-    if org != data['name']:
+    if orga and org != data['name']:
         # changement d'organisation
         org = data['name']
         logo = None
@@ -62,7 +89,7 @@ def data2tex(datagouv):
             logo = 'images/orga/'+ logo
             if not os.path.isfile(logo):
                 r = requests.get(data['logo'])
-                print('GET',data['logo'],logo)
+                print('GET',data['logo'],'->',logo)
                 if r.status_code == 200:
                     if logo:
                         with open(logo, 'wb') as fd:
@@ -81,15 +108,13 @@ def data2tex(datagouv):
             out.write(crlf+"""
 \\clearpage
 \\section{%(name)s}
-\\fbox{
-  \\begin{minipage}{0.95\\textwidth}
-    \\begin{wrapfigure}{r}{%(width)s}
-      \\centering
-      \\includegraphics[width=%(width)s]{%(logo)s}
-    \\end{wrapfigure}
-  %(description)s
-  \\end{minipage}
-}
+\\begin{center}
+  \\includegraphics[width=%(width)s]{%(logo)s}
+\\end{center}
+
+%(description)s
+
+\\vspace{1cm}
 
 """ % {'name': md2tex(data['name']),
        'width': qrcode_width,
@@ -101,11 +126,9 @@ def data2tex(datagouv):
             out.write(crlf+"""
 \\clearpage
 \\section{%(name)s}
-\\fbox{
-  \\begin{minipage}{0.95\\textwidth}
-  %(description)s
-  \\end{minipage}
-}
+
+%(description)s
+
 \\vspace{1cm}
 
 """ % {'name': md2tex(data['name']),
@@ -123,8 +146,11 @@ def data2tex(datagouv):
         m = re.sub(re.compile('!(\[|\().*?\)', re.MULTILINE), r'', m.replace('\n]',']'))
         print(m)
         exit()
-    out.write('\\addcontentsline{toc}{subsection}{%s}' % (md2tex(data['title'].capitalize()), ) + crlf)
-    out.write('\\subsection*{%s}' % (md2tex(data['title'].capitalize(), )) + crlf+crlf)
+    if orga:
+        out.write('\\addcontentsline{toc}{subsection}{%s}' % (capitale(md2tex(data['title'])), ) + crlf)
+        out.write('\\subsection*{%s}' % (capitale(md2tex(data['title'])), ) + crlf+crlf)
+    else:
+        out.write('\\section{%s}' % (capitale(md2tex(data['title'])), ) + crlf+crlf)
     if data['tags']:
         for mot in data['tags'].split(','):
             out.write('\\index{%s}' % (mot.replace('-','!'),))
@@ -166,12 +192,37 @@ def data2tex(datagouv):
 \\vspace{0.5cm}
 """)
 
+pg = psycopg2.connect("dbname=datagouv")
+db = pg.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
 out = open('datagouv.tex','w')
+
 crlf = '\x0d\x0a'
+site_url = 'https://data.gouv.fr/'
+qrcode_width = '2.5cm'
+freq = {'annual': 'annuelle',
+        'punctual': 'ponctuelle',
+        'irregular': 'irrégulière',
+        'monthly': 'mensuelle',
+        'quarterly': 'trimestrielle',
+        'continue': 'continue',
+        'semiannual': 'semestrielle',
+        'daily': 'quotienne',
+        'weekly': 'hebdomadaire',
+        'biweekly': 'bi-hebdomadaire',
+        'bimonthly': 'bi-mesnsuelle' }
+gran = {'fr:commune': 'à la commune',
+        'country': 'au pays',
+        'fr:departement': 'au département',
+        'fr:epci': "à l'EPCI",
+        'fr:region': 'à la région',
+        'poi': "au point d'intérêt",
+        'fr:canton': 'au canton',
+        'fr:iris': "à l'IRIS INSEE",
+        'fr:collectivite': 'à la collectivité' }
+
+
 out.write("""\\documentclass[a4paper, 12pt]{book}
-\\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
 \\usepackage[frenchb]{babel}
 \\usepackage{makeidx}
 \\usepackage{hyperref}
@@ -182,7 +233,7 @@ out.write("""\\documentclass[a4paper, 12pt]{book}
 \\usepackage{imakeidx}
 \\usepackage{wrapfig}
 \\usepackage{graphicx}
-
+\\usepackage{longtable}
 \\usepackage{qrcode}
 
 \\makeindex[intoc]
@@ -207,7 +258,7 @@ out.write("""\\documentclass[a4paper, 12pt]{book}
 \\emph{data.gouv.fr} est le portail unique interministériel destiné à rassembler et à mettre à disposition librement l'ensemble des informations publiques de l'Etat, de ses établissements publics administratifs et, si elles le souhaitent, des collectivités territoriales et des personnes de droit public ou de droit privé chargées d'une mission de service public.
 (décret n\\degree 2011-194 du 21 février 2011)
 \\begin{center} 
-Vous avez entre les main la toute première édition papier de \\emph{data.gouv.fr}\\\\
+Vous avez entre les mains la toute première édition papier de \\emph{data.gouv.fr}\\\\
 Elle a été produite par \\emph{Etalab \\& Alumni}, avec le langage \\LaTeX.
 \\end{center}
 
@@ -223,6 +274,19 @@ Ce chapitre liste les jeux de données de référence définis par le \\href{htt
 Voir aussi \\url{https://www.data.gouv.fr/fr/reference}
 
 \\clearpage
+""")
+
+
+db.execute("""
+select * from datagouv_data where id in ('5530fbacc751df5ff937dddb','5862206588ee38254d3f4e5e','58c984b088ee386cdb1261f3','58e5924b88ee3802ca255566','58d8d8a0c751df17537c66be','57343feb88ee3823b0d1b934','58e5842688ee386c65805755','58e53811c751df03df38f42d','58da857388ee384902e505f5') order by title;
+""")
+datagouv = db.fetchall()
+
+data2tex(datagouv, orga=False)
+
+
+out.write("""
+\\clearpage
 
 \\chapter{Données des services publics certifiés}
 
@@ -232,41 +296,24 @@ Ce chapitre liste les jeux de données produits par les services publics répert
 
 """+crlf)
 
-
-site_url = 'https://data.gouv.fr/'
-qrcode_width = '2.5cm'
-freq = {'annual': 'annuelle',
-        'punctual': 'ponctuelle',
-        'irregular': 'irrégulière',
-        'monthly': 'mensuelle',
-        'quarterly': 'trimestrielle',
-        'continue': 'continue',
-        'semiannual': 'semestrielle',
-        'daily': 'quotienne',
-        'weekly': 'hebdomadaire',
-        'biweekly': 'bi-hebdomadaire',
-        'bimonthly': 'bi-mesnsuelle' }
-gran = {'fr:commune': 'à la commune',
-        'country': 'au pays',
-        'fr:departement': 'au département',
-        'fr:epci': "à l'EPCI",
-        'fr:region': 'à la région',
-        'poi': "au point d'intérêt",
-        'fr:canton': 'au canton',
-        'fr:iris': "à l'IRIS INSEE",
-        'fr:collectivite': 'à la collectivité' }
-crlf='\x0d\x0a'
-
-
-
-if len(sys.argv)>1:
-    csv.field_size_limit(250000)
-    datagouv = csv.DictReader(open(sys.argv[1], 'r'))
-else:
-    pg = psycopg2.connect("dbname=datagouv")
-    db = pg.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    db.execute("""select * from datagouv_data where badges ~ 'certified' order by name,title limit 100""")
-    datagouv = db.fetchall()
+db.execute("""
+select
+  *
+from (
+  select
+    id
+  from
+    datagouv_org
+  where
+    badges ~ 'certified'
+  order by "metric.followers" desc
+  limit 20
+) as o
+join
+  datagouv_data d on (d.organization_id=o.id)
+order by name, title limit 1000;
+""")
+datagouv = db.fetchall()
 
 data2tex(datagouv)
 
@@ -279,11 +326,24 @@ out.write("""
 Ce chapitre liste les autres jeux de données disponibles sur \\emph{data.gouv.fr}.
 """)
 
-if len(sys.argv)<2:
-    pg = psycopg2.connect("dbname=datagouv")
-    db = pg.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    db.execute("""select * from datagouv_data where badges !~ 'certified' order by name,title limit 100""")
-    datagouv = db.fetchall()
+db.execute("""
+select
+  *
+from (
+  select
+    id
+  from
+    datagouv_org
+  where
+    badges !~ 'certified'
+  order by "metric.followers" desc
+  limit 20
+) as o
+join
+  datagouv_data d on (d.organization_id=o.id)
+order by name, title limit 1000;
+""")
+datagouv = db.fetchall()
 
 data2tex(datagouv)
 
