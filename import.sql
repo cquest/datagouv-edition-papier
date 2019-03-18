@@ -49,3 +49,42 @@ CREATE TABLE datagouv_org (
 );
 
 \copy datagouv_org from organizations-2019-03-16-12-29.csv with (format csv, header true, delimiter ';')
+
+
+create view datagouv_data as SELECT d.id,
+    d.title,
+    d.slug,
+    d.url,
+    d.organization,
+    d.organization_id,
+    d.description,
+    d.frequency,
+    d.license,
+    d."temporal_coverage.start",
+    d."temporal_coverage.end",
+    d."spatial.granularity",
+    d."spatial.zones",
+    d.private,
+    d.featured,
+    d.created_at,
+    d.last_modified,
+    d.tags,
+    d."metric.discussions",
+    d."metric.followers",
+    d."metric.reuses",
+    d."metric.issues",
+    d."metric.views",
+    o.name,
+    o.description AS description_org,
+    o.logo,
+    o.badges,
+    o.created_at AS org_create,
+    o.last_modified AS org_modified,
+"metric.datasets",
+"metric.members",
+o."metric.reuses" as org_reuses,
+o."metric.followers" as org_followers
+
+   FROM datagouv_dataset d
+     JOIN datagouv_org o ON o.id::text = d.organization_id::text;
+
