@@ -2,7 +2,7 @@
 
 Ce code sert à produire une édition papier de **data.gouv.fr**.
 
-Il a été écrit pour le 1er Avril 2019.
+Il a été écrit pour le 1er Avril 2019, car il s'agissait bien d'un poisson d'avril !
 
 ## Principe
 
@@ -24,3 +24,7 @@ Ils sont regroupés en trois chapitres:
 Pour chaque jeu de donnée, le producteur est décrit, puis le jeu de données (avec un QR code pour accéder au site web), puis une listes d'autres jeux de données publiés par ce producteur est fournie.
 
 L'index final est construit à partir des mot-clés indiqués dans les métadonnées des jeux de données.
+
+## Le résultat
+
+Le "jeu de données" est référencé sur https://www.data.gouv.fr/fr/datasets/5ca1bab38b4c41179d661a7a
