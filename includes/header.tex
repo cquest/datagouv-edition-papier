@@ -1,0 +1,101 @@
+\documentclass[a4paper, 11pt]{book}
+\usepackage[french]{babel}
+\usepackage{makeidx}
+\usepackage{hyperref}
+\usepackage{gensymb}
+\usepackage{eurosym}
+\usepackage{pifont}
+\usepackage{textgreek}
+\usepackage{imakeidx}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{qrcode}
+\usepackage{booktabs}
+\usepackage{parskip}
+\usepackage{needspace}
+\usepackage{minitoc}
+\dominitoc
+\mtcselectlanguage{french}
+
+\makeindex[intoc]
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    filecolor=magenta,      
+    urlcolor=black,
+}
+
+\title{data.gouv.fr}
+\author{Etalab}
+\date{2019-04-01} 
+\begin{document}
+{
+\frontmatter
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{\fill}
+
+\includegraphics[width=8cm]{images/datagouv.png}
+\newline
+\rule{\textwidth}{0.2pt}
+\Large \par \hfill Édition 2019
+\vspace*{\fill}
+\newline
+\begin{center} 
+\LARGE Tome 1 - Le "Best Of"
+\par
+\end{center}
+
+\vspace*{\fill}
+\includegraphics[width=4cm]{images/marianne.png}
+\hfill
+\includegraphics[width=4cm]{images/logo-etalab.png}
+
+\pagenumbering{gobble}
+\end{titlepage}
+\pagebreak
+\normalsize
+\pagenumbering{roman}
+\section*{Préface}
+
+\emph{data.gouv.fr} est le portail unique interministériel destiné à
+rassembler et à mettre à disposition librement l'ensemble des
+informations publiques de l'Etat, de ses établissements publics
+administratifs et, si elles le souhaitent, des collectivités
+territoriales et des personnes de droit public ou de droit privé
+chargées d'une mission de service public.
+(décret n\degree 2011-194 du 21 février 2011)
+
+\noindent
+Vous avez entre les mains la toute première édition papier de \emph{data.gouv.fr}
+\par
+\noindent
+Elle a été produite par \emph{Etalab \& Alumni}, avec le langage \href{https://fr.wikipedia.org/wiki/LaTeX}{\LaTeX}.
+\par
+\noindent
+\textbf{Notre environnement est fragile, merci de n’imprimer ce document qu’en cas de nécessité.}
+
+\par
+\vspace*{\fill}
+Ce document est sous \href{https://www.etalab.gouv.fr/wp-content/uploads/2017/04/ETALAB-Licence-Ouverte-v2.0.pdf}{Licence Ouverte 2.0}
+\clearpage
+\setcounter{tocdepth}{0}
+\tableofcontents
+
+\mainmatter
+
+\chapter{Données de référence}
+
+Ce chapitre liste les jeux de données de référence définis
+par le \href{https://www.legifrance.gouv.fr/affichTexte.do?cidTexte=JORFTEXT000034194946&categorieLien=id}{décret n\degree 2017-331}
+du 14 mars 2017 relatif au service public de mise à disposition des données de référence codifié dans
+l'\href{https://www.legifrance.gouv.fr/affichCodeArticle.do;jsessionid=19672D71250ADD261EC92AD65C5FE97B.tplgfr36s_3?cidTexte=LEGITEXT000031366350&idArticle=LEGIARTI000034196073&categorieLien=id#LEGIARTI000034196073}{article R321-5 et suivants du Code des Relations entre le Public et l'Administration}.
+\par
+\noindent
+Voir aussi \url{https://www.data.gouv.fr/fr/reference}
+
+\minitoc
+
+\clearpage
